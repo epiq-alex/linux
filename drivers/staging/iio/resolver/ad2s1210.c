@@ -710,7 +710,6 @@ static int ad2s1210_probe(struct spi_device *spi)
 	st->hysteresis = true;
 	st->mode = MOD_CONFIG;
 	st->resolution = 12;
-	st->fclkin = AD2S1210_DEF_CLKIN;
 	st->fexcit = AD2S1210_DEF_EXCIT;
 
 	indio_dev->dev.parent = &spi->dev;
@@ -723,6 +722,15 @@ static int ad2s1210_probe(struct spi_device *spi)
 	ret = iio_device_register(indio_dev);
 	if (ret)
 		return ret;
+
+	if (AD2S1210_MAX_CLKIN < spi->max_speed_hz) {
+		spi->max_speed_hz = AD2S1210_MAX_CLKIN;
+		dev_warn(&spi->dev, "CLKIN freq limited to max value %d\n",
+			 AD2S1210_MAX_CLKIN);
+	} else if (AD2S1210_MIN_CLKIN > spi->max_speed_hz) {
+		dev_warn(&spi->dev, "CLKIN freq running below min value %d\n",
+			 AD2S1210_MIN_CLKIN);
+	}
 
 	spi_setup(spi);
 	ad2s1210_initial(st);
